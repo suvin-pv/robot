@@ -7,8 +7,7 @@ cmake_minimum_required(VERSION 3.22)
 # (all values are in STM32CubeIDE: Project > Properties > C/C++ Build > Settings)
 # ---------------------------------------------------------------------------
 set(MCU_FLAGS  -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16)   # EDIT: core/FPU
-set(MCU_DEFINES USE_HAL_DRIVER STM32F407xx
-                TX_INCLUDE_USER_DEFINE_FILE TX_SINGLE_MODE_NON_SECURE=1)       # EDIT: chip + ThreadX defines (copy from CubeIDE > MCU GCC Compiler > Preprocessor)
+set(MCU_DEFINES USE_HAL_DRIVER STM32F407xx TX_INCLUDE_USER_DEFINE_FILE)            # matches .cproject (Debug adds DEBUG)
 set(PROJECT_NAME_FW motor_ecu)                                               # EDIT: any name
 set(FW_DIR IndRover_MotorECU)   # CubeIDE project folder inside the repo ("." if it is the repo root)
 
@@ -20,9 +19,12 @@ project(${PROJECT_NAME_FW} C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_C_FLAGS_RELEASE   "-Os -g0")   # CubeIDE Release uses -Os
+set(CMAKE_CXX_FLAGS_RELEASE "-Os -g0")
+set(CMAKE_ASM_FLAGS_RELEASE "-g0")
 
 # Sources: everything under these folders that exists in the repo
-foreach(dir Core App Application Drivers Middlewares)
+foreach(dir Core AZURE_RTOS App Application Drivers Middlewares)
   if(EXISTS ${CMAKE_SOURCE_DIR}/${FW_DIR}/${dir})
     file(GLOB_RECURSE _src CONFIGURE_DEPENDS
          ${FW_DIR}/${dir}/*.c ${FW_DIR}/${dir}/*.cpp ${FW_DIR}/${dir}/*.cc)
@@ -98,8 +100,18 @@ target_compile_options(${PROJECT_NAME_FW}.elf PRIVATE
   ${MCU_FLAGS} -Wall -Wextra -ffunction-sections -fdata-sections
   $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti -fno-threadsafe-statics>)
 target_link_options(${PROJECT_NAME_FW}.elf PRIVATE
-  ${MCU_FLAGS} -T${LDSCRIPT} --specs=nano.specs -Wl,--gc-sections
+  ${MCU_FLAGS} -T${LDSCRIPT} --specs=nano.specs --specs=nosys.specs -Wl,--gc-sections
   -Wl,-Map=${PROJECT_NAME_FW}.map)
+
+# CI WORKAROUND: Core/Src/tx_initialize_low_level.s uses Arm-Compiler/Keil symbol names that the
+# GCC linker script does not define. Map them to the GCC equivalents so the CI link succeeds.
+# (Proper fix: regenerate that file for the STM32CubeIDE toolchain in CubeMX, then set this OFF.)
+option(CI_KEIL_SYMBOL_SHIM "Map Keil ThreadX symbols to GCC ones" ON)
+if(CI_KEIL_SYMBOL_SHIM)
+  target_link_options(${PROJECT_NAME_FW}.elf PRIVATE
+    "LINKER:--defsym=Image$$RW_IRAM1$$ZI$$Limit=_end"
+    "LINKER:--defsym=__Vectors=g_pfnVectors")
+endif()
 
 add_custom_command(TARGET ${PROJECT_NAME_FW}.elf POST_BUILD
   COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${PROJECT_NAME_FW}.elf> ${PROJECT_NAME_FW}.bin

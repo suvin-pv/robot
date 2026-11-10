@@ -12,7 +12,7 @@ MAX_FINDINGS=${MAX_FINDINGS:-0}
 cppcheck --project="$CDB" --std=c++17 \
   --enable=warning,style,performance,portability \
   --inline-suppr --suppressions-list=ci/cppcheck-suppressions.txt \
-  -i third_party -i Drivers -i Middlewares -i threadx \
+  -i third_party -i Drivers -i Middlewares -i AZURE_RTOS -i threadx \
   --xml --xml-version=2 --error-exitcode=0 2> "$OUT/cppcheck.xml"
 CPPCHECK_N=$(grep -c '<error ' "$OUT/cppcheck.xml" || true)
 
@@ -22,7 +22,7 @@ import json,sys
 for e in json.load(open(sys.argv[1])):
     f=e["file"]
     if not any(s in f for s in ("third_party","Drivers","Middlewares","threadx","/test/",
-              "Core/Startup","system_stm32","syscalls.c","sysmem.c","stm32f","stm32g","stm32h","stm32l","_hal_msp","_it.c")):
+              "Core/Startup","AZURE_RTOS","system_stm32","syscalls.c","sysmem.c","stm32f","stm32g","stm32h","stm32l","_hal_msp","_it.c")):
         print(f)
 PY
 )
