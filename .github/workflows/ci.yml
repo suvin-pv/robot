@@ -50,7 +50,7 @@ jobs:
           sudo apt-get install -y ninja-build gcc-arm-none-eabi cppcheck clang-tidy gcovr libgtest-dev
       - name: Run unit tests + coverage
         if: hashFiles('test/CMakeLists.txt') != ''
-        run: ci/run_unit_tests.sh
+        run: bash ci/run_unit_tests.sh
       - uses: actions/upload-artifact@v4
         if: always() && hashFiles('test/CMakeLists.txt') != ''
         with:
@@ -72,7 +72,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with: { name: firmware, path: build/fw }
       - name: cppcheck + clang-tidy gate
-        run: ci/static_analysis.sh
+        run: bash ci/static_analysis.sh
         env:
           MAX_FINDINGS: ${{ vars.MAX_FINDINGS || '0' }}
       - uses: actions/upload-artifact@v4
