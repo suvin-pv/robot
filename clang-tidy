@@ -1,0 +1,13 @@
+# Closest free approximation of MISRA/AUTOSAR-style rules. Not a MISRA checker.
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  cppcoreguidelines-*,
+  hicpp-*,
+  performance-*,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -hicpp-no-array-decay
+HeaderFilterRegex: '^(?!.*(third_party|Drivers|threadx)).*'
+WarningsAsErrors: ''

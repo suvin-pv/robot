@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  firmware-build:
+    # Cross-build for STM32; also produces compile_commands.json for QAC
+    runs-on: [self-hosted, linux, stm32]
+    steps:
+      - uses: actions/checkout@v4
+        with: { submodules: recursive }
+      - name: Configure + build (arm-none-eabi-gcc)
+        run: |
+          cmake -S . -B build/fw -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi.cmake \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cmake --build build/fw
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: |
+            build/fw/*.elf
+            build/fw/*.bin
+            build/fw/compile_commands.json
+
+  unit-tests:
+    # Host build (x86) of the logic layer, HAL/ThreadX mocked
+    runs-on: [self-hosted, linux, stm32]
+    steps:
+      - uses: actions/checkout@v4
+        with: { submodules: recursive }
+      - name: Run unit tests + coverage
+        run: ci/run_unit_tests.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-results
+          path: |
+            build/ut/junit/*.xml
+            build/ut/coverage/**
+
+  static-analysis:
+    needs: firmware-build
+    runs-on: [self-hosted, linux, stm32]
+    steps:
+      - uses: actions/checkout@v4
+        with: { submodules: recursive }
+      - uses: actions/download-artifact@v4
+        with: { name: firmware, path: build/fw }
+      - name: cppcheck + clang-tidy gate
+        run: ci/static_analysis.sh
+        env:
+          MAX_FINDINGS: ${{ vars.MAX_FINDINGS || '0' }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: static-analysis-reports
+          path: build/static_reports/**
