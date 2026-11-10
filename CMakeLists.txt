@@ -7,7 +7,8 @@ cmake_minimum_required(VERSION 3.22)
 # (all values are in STM32CubeIDE: Project > Properties > C/C++ Build > Settings)
 # ---------------------------------------------------------------------------
 set(MCU_FLAGS  -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16)   # EDIT: core/FPU
-set(MCU_DEFINES USE_HAL_DRIVER STM32F407xx)                                  # EDIT: chip define
+set(MCU_DEFINES USE_HAL_DRIVER STM32F407xx
+                TX_INCLUDE_USER_DEFINE_FILE TX_SINGLE_MODE_NON_SECURE=1)       # EDIT: chip + ThreadX defines (copy from CubeIDE > MCU GCC Compiler > Preprocessor)
 set(PROJECT_NAME_FW motor_ecu)                                               # EDIT: any name
 set(FW_DIR IndRover_MotorECU)   # CubeIDE project folder inside the repo ("." if it is the repo root)
 
@@ -34,6 +35,35 @@ foreach(dir Core App Application Drivers Middlewares)
   endif()
 endforeach()
 list(REMOVE_DUPLICATES INCS)
+
+# ThreadX: only the Cortex-M4 GNU port (the folder also ships ports for IAR/AC6 etc.)
+set(THREADX_PORT "/ports/cortex_m4/gnu/")
+foreach(var SRCS INCS)
+  set(_keep "")
+  foreach(item ${${var}})
+    if(item MATCHES "/threadx/ports/" AND NOT item MATCHES "${THREADX_PORT}")
+      continue()
+    endif()
+    if(item MATCHES "/example_build/")
+      continue()
+    endif()
+    list(APPEND _keep ${item})
+  endforeach()
+  set(${var} ${_keep})
+endforeach()
+
+# Assembly sources (ThreadX port: scheduler, context switch, low-level init)
+file(GLOB_RECURSE ASM_SRCS CONFIGURE_DEPENDS
+     ${FW_DIR}/Core/*.S ${FW_DIR}/Core/*.s
+     ${FW_DIR}/Middlewares/*.S ${FW_DIR}/Middlewares/*.s
+     ${FW_DIR}/Application/*.S ${FW_DIR}/Application/*.s)
+list(FILTER ASM_SRCS EXCLUDE REGEX "startup|/example_build/")
+foreach(item ${ASM_SRCS})
+  if(item MATCHES "/threadx/ports/" AND NOT item MATCHES "${THREADX_PORT}")
+    continue()
+  endif()
+  list(APPEND SRCS ${item})
+endforeach()
 
 # Drop example/template files that CubeMX ships but are not part of the build
 list(FILTER SRCS EXCLUDE REGEX "_template\\.c$|/Templates/|/Examples/")
