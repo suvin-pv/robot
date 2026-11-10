@@ -9,6 +9,7 @@ cmake_minimum_required(VERSION 3.22)
 set(MCU_FLAGS  -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16)   # EDIT: core/FPU
 set(MCU_DEFINES USE_HAL_DRIVER STM32F407xx)                                  # EDIT: chip define
 set(PROJECT_NAME_FW motor_ecu)                                               # EDIT: any name
+set(FW_DIR IndRover_MotorECU)   # CubeIDE project folder inside the repo ("." if it is the repo root)
 
 if(NOT CMAKE_TOOLCHAIN_FILE)
   set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/cmake/arm-none-eabi.cmake)
@@ -21,11 +22,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Sources: everything under these folders that exists in the repo
 foreach(dir Core App Application Drivers Middlewares)
-  if(EXISTS ${CMAKE_SOURCE_DIR}/${dir})
+  if(EXISTS ${CMAKE_SOURCE_DIR}/${FW_DIR}/${dir})
     file(GLOB_RECURSE _src CONFIGURE_DEPENDS
-         ${dir}/*.c ${dir}/*.cpp ${dir}/*.cc)
+         ${FW_DIR}/${dir}/*.c ${FW_DIR}/${dir}/*.cpp ${FW_DIR}/${dir}/*.cc)
     list(APPEND SRCS ${_src})
-    file(GLOB_RECURSE _hdr CONFIGURE_DEPENDS ${dir}/*.h ${dir}/*.hpp)
+    file(GLOB_RECURSE _hdr CONFIGURE_DEPENDS ${FW_DIR}/${dir}/*.h ${FW_DIR}/${dir}/*.hpp)
     foreach(h ${_hdr})
       get_filename_component(d ${h} DIRECTORY)
       list(APPEND INCS ${d})
@@ -37,9 +38,28 @@ list(REMOVE_DUPLICATES INCS)
 # Drop example/template files that CubeMX ships but are not part of the build
 list(FILTER SRCS EXCLUDE REGEX "_template\\.c$|/Templates/|/Examples/")
 
-file(GLOB STARTUP CONFIGURE_DEPENDS Core/Startup/*.s Core/Startup/*.S)
-file(GLOB LDSCRIPT CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/*_FLASH.ld)
-list(GET LDSCRIPT 0 LDSCRIPT)
+# Startup file (startup_stm32f407xx.s) and linker script (*.ld): search the whole repo
+file(GLOB_RECURSE STARTUP CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/${FW_DIR}/*startup*.s ${CMAKE_SOURCE_DIR}/${FW_DIR}/*startup*.S)
+list(FILTER STARTUP EXCLUDE REGEX "/build/")
+file(GLOB_RECURSE LD_ALL CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/${FW_DIR}/*.ld)
+list(FILTER LD_ALL EXCLUDE REGEX "/build/")
+set(LD_FLASH ${LD_ALL})
+list(FILTER LD_FLASH INCLUDE REGEX "FLASH")
+if(LD_FLASH)
+  list(GET LD_FLASH 0 LDSCRIPT)
+elseif(LD_ALL)
+  list(GET LD_ALL 0 LDSCRIPT)
+endif()
+if(NOT LDSCRIPT)
+  message(FATAL_ERROR "No linker script (*.ld) found in the repo. Commit your STM32F407xx_FLASH.ld "
+                      "(check .gitignore is not hiding *.ld files).")
+endif()
+if(NOT STARTUP)
+  message(FATAL_ERROR "No startup file (startup_*.s) found. Commit Core/Startup/startup_stm32f407xx.s "
+                      "(check .gitignore is not hiding *.s files).")
+endif()
+message(STATUS "Linker script: ${LDSCRIPT}")
+message(STATUS "Startup file : ${STARTUP}")
 
 add_executable(${PROJECT_NAME_FW}.elf ${SRCS} ${STARTUP})
 target_include_directories(${PROJECT_NAME_FW}.elf PRIVATE ${INCS})
