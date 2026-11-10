@@ -1,0 +1,25 @@
+# cppcheck suppressions - one per line:  <id>   or   <id>:<file glob>
+# Keep this list short and justified. Prefer an inline "// cppcheck-suppress <id>" next to
+# a specific line (with a comment saying why) over a global suppression.
+
+# --- Tool noise, not code problems ---
+# Headers we deliberately don't pass (HAL, CMSIS, ThreadX) - cppcheck can't see them.
+missingIncludeSystem
+missingInclude
+# If a suppression below stops matching, don't fail on that.
+unmatchedSuppression
+# Informational summary lines, not findings.
+checkersReport
+normalCheckLevelMaxBranches
+
+# --- Embedded firmware false positives ---
+# ISR handlers, ThreadX thread entries, HAL callbacks and weak overrides are called from
+# startup code / the kernel / HAL, which cppcheck can't see, so they look "unused".
+unusedFunction
+
+# Register-style structs and constants often have members that are only used by hardware.
+unusedStructMember
+
+# --- Examples of file-scoped suppressions (uncomment if needed) ---
+# constParameterPointer:*/Application/*/idr_tx_objects.cpp
+# cstyleCast:*/Application/*

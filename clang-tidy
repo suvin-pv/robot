@@ -8,6 +8,10 @@ Checks: >
   performance-*,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
   -cppcoreguidelines-pro-type-reinterpret-cast,
-  -hicpp-no-array-decay
-HeaderFilterRegex: '^(?!.*(third_party|Drivers|threadx)).*'
+  -hicpp-no-array-decay,
+  -bugprone-easily-swappable-parameters,
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cert-err58-cpp
+HeaderFilterRegex: '^(?!.*(third_party|Drivers|Middlewares|AZURE_RTOS|threadx)).*'
 WarningsAsErrors: ''

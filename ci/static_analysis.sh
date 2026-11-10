@@ -8,10 +8,13 @@ CDB=${CDB:-build/fw/compile_commands.json}
 OUT=build/static_reports; mkdir -p "$OUT"
 MAX_FINDINGS=${MAX_FINDINGS:-0}
 
+SUPP=""; [ -f ci/cppcheck-suppressions.txt ] && SUPP=ci/cppcheck-suppressions.txt
+[ -n "$SUPP" ] || echo "WARNING: ci/cppcheck-suppressions.txt not found - running without suppressions"
+
 # --- cppcheck (project-aware, skips third-party/HAL/ThreadX) ---
 cppcheck --project="$CDB" --std=c++17 \
   --enable=warning,style,performance,portability \
-  --inline-suppr --suppressions-list=ci/cppcheck-suppressions.txt \
+  --inline-suppr ${SUPP:+--suppressions-list=$SUPP} \
   -i third_party -i Drivers -i Middlewares -i AZURE_RTOS -i threadx \
   --xml --xml-version=2 --error-exitcode=0 2> "$OUT/cppcheck.xml"
 CPPCHECK_N=$(grep -c '<error ' "$OUT/cppcheck.xml" || true)
