@@ -30,13 +30,14 @@ TEST_RC=$?
 set -e
 
 # --- coverage of the application code only (not tests, shim or third-party) ---
+DEC_OPT=""; gcovr --help 2>/dev/null | grep -q -- "--decisions" && DEC_OPT="--decisions"
 set +e
 gcovr -r . --object-directory "$OUT" \
       --filter 'IndRover_MotorECU/Application/' \
-      --exclude 'IndRover_MotorECU/Application/UnitTest/' \
       --exclude-directories '.*/CMakeFiles/[0-9][0-9.]*' \
       --exclude '.*CompilerId.*' \
       --gcov-ignore-errors=no_working_dir_found \
+      $DEC_OPT \
       --exclude-throw-branches --exclude-unreachable-branches \
       --xml-pretty --xml "$OUT/coverage/coverage.xml" \
       --json-summary-pretty --json-summary "$OUT/coverage/coverage_summary.json" \

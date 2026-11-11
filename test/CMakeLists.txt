@@ -17,6 +17,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(FW_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../IndRover_MotorECU)
 set(APP_DIR ${FW_DIR}/Application)
+set(TEST_DIR ${FW_DIR}/Test)      # unit test sources: IndRover_MotorECU/Test/{Inc,Src}
 
 find_package(GTest REQUIRED)
 
@@ -26,15 +27,12 @@ set(APP_UNDER_TEST
   ${APP_DIR}/App/Src/idr_thread_cmd_mgr.cpp
 )
 
-# Include directories: every folder under Application/ that holds headers,
-# except the unit test folder itself.
+# Include directories: every folder under Application/ that holds headers.
 file(GLOB_RECURSE _app_headers CONFIGURE_DEPENDS ${APP_DIR}/*.h ${APP_DIR}/*.hpp)
 set(APP_INCS "")
 foreach(h ${_app_headers})
-  if(NOT h MATCHES "/Application/UnitTest/")
-    get_filename_component(d ${h} DIRECTORY)
-    list(APPEND APP_INCS ${d})
-  endif()
+  get_filename_component(d ${h} DIRECTORY)
+  list(APPEND APP_INCS ${d})
 endforeach()
 list(REMOVE_DUPLICATES APP_INCS)
 
@@ -51,9 +49,9 @@ target_compile_options(app_under_test PRIVATE -Wall -Wextra)
 # --- Test executable ---
 add_executable(idr_unit_tests
   main.cpp
-  ${APP_DIR}/UnitTest/Src/unit_test.cpp
+  ${TEST_DIR}/Src/unit_test.cpp
 )
-target_include_directories(idr_unit_tests PRIVATE ${APP_DIR}/UnitTest/Inc)
+target_include_directories(idr_unit_tests PRIVATE ${TEST_DIR}/Inc)
 target_link_libraries(idr_unit_tests PRIVATE app_under_test GTest::gtest)
 target_compile_options(idr_unit_tests PRIVATE -Wall -Wextra)
 

@@ -21,7 +21,7 @@ cppcheck --project="$CDB" --std=c++17 \
 # --- clang-tidy (config in .clang-tidy) on our own C/C++ sources only (never .s/.S) ---
 FILES=$(python3 -I - "$CDB" <<'PYEOF'
 import json,sys
-SKIP=("/Core/","third_party","Drivers","Middlewares","threadx","/test/","Core/Startup","AZURE_RTOS",
+SKIP=("/Core/","third_party","Drivers","Middlewares","threadx","/test/","/Test/","Core/Startup","AZURE_RTOS",
       "system_stm32","syscalls.c","sysmem.c","stm32f","stm32g","stm32h","stm32l","_hal_msp","_it.c")
 for e in json.load(open(sys.argv[1])):
     f=e["file"]

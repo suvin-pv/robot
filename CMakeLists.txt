@@ -67,9 +67,8 @@ foreach(item ${ASM_SRCS})
   list(APPEND SRCS ${item})
 endforeach()
 
-# Unit tests run on the host only (GitHub Actions) - keep them out of the firmware
-list(FILTER SRCS EXCLUDE REGEX "/Application/UnitTest/")
-list(FILTER INCS EXCLUDE REGEX "/Application/UnitTest")
+# Unit tests (IndRover_MotorECU/Test) run on the host only (GitHub Actions) and live
+# outside every directory scanned above, so they are never part of the firmware.
 
 # Drop example/template files that CubeMX ships but are not part of the build
 list(FILTER SRCS EXCLUDE REGEX "_template\\.c$|/Templates/|/Examples/")
