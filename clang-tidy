@@ -1,17 +1,30 @@
-# Closest free approximation of MISRA/AUTOSAR-style rules. Not a MISRA checker.
-Checks: >
+---
+# Place at the repo root. clang-tidy picks it up for every source file below it.
+Checks: >-
   -*,
-  bugprone-*,
   cert-*,
+  bugprone-*,
   cppcoreguidelines-*,
   hicpp-*,
   performance-*,
+  clang-analyzer-*,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
   -cppcoreguidelines-pro-type-reinterpret-cast,
-  -hicpp-no-array-decay,
-  -bugprone-easily-swappable-parameters,
-  -cppcoreguidelines-avoid-non-const-global-variables,
   -cppcoreguidelines-avoid-magic-numbers,
-  -cert-err58-cpp
-HeaderFilterRegex: '^(?!.*(third_party|Drivers|Middlewares|AZURE_RTOS|threadx)).*'
+  -hicpp-signed-bitwise,
+  -hicpp-no-assembler
+
+# Start with no hard failures so existing code does not break CI.
+# Once the warning count is under control, change to: 'cert-*'
 WarningsAsErrors: ''
+
+# Only report issues in your own headers (adjust to your folder names).
+# Keeps generated CubeMX/HAL/ThreadX headers out of the output.
+# LLVM regex has no negative lookahead, so list what to include.
+HeaderFilterRegex: '(^|/)(src|inc|include|Core/Src|Core/Inc|App)/.*'
+
+FormatStyle: none
+
+CheckOptions:
+  - key: readability-function-cognitive-complexity.Threshold
+    value: '15'
