@@ -37,6 +37,10 @@ build/
 *.uv2.bak
 *.pjt.bak
 *.Txt
+# ...but never ignore the build/CI files that happen to end in .txt
+!CMakeLists.txt
+!**/CMakeLists.txt
+!ci/*.txt
 *.lst
 *.htm
 *.dep
