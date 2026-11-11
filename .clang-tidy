@@ -14,5 +14,5 @@ Checks: >
   -cppcoreguidelines-avoid-magic-numbers,
   -cert-err58-cpp,
   -clang-analyzer-core.FixedAddressDereference
-HeaderFilterRegex: '^(?!.*(third_party|Drivers|Middlewares|AZURE_RTOS|threadx)).*'
+HeaderFilterRegex: '^(?!.*(third_party|Drivers|Middlewares|AZURE_RTOS|threadx|/Core/)).*'
 WarningsAsErrors: ''

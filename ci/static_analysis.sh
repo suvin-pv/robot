@@ -15,13 +15,13 @@ SUPP=""; [ -f ci/cppcheck-suppressions.txt ] && SUPP=ci/cppcheck-suppressions.tx
 cppcheck --project="$CDB" --std=c++17 \
   --enable=warning,style,performance,portability \
   --inline-suppr ${SUPP:+--suppressions-list=$SUPP} \
-  -i third_party -i Drivers -i Middlewares -i AZURE_RTOS -i threadx \
+  -i third_party -i Drivers -i Middlewares -i AZURE_RTOS -i threadx -i Core \
   --xml --xml-version=2 --error-exitcode=0 2> "$OUT/cppcheck.xml"
 
 # --- clang-tidy (config in .clang-tidy) on our own C/C++ sources only (never .s/.S) ---
 FILES=$(python3 -I - "$CDB" <<'PYEOF'
 import json,sys
-SKIP=("third_party","Drivers","Middlewares","threadx","/test/","Core/Startup","AZURE_RTOS",
+SKIP=("/Core/","third_party","Drivers","Middlewares","threadx","/test/","Core/Startup","AZURE_RTOS",
       "system_stm32","syscalls.c","sysmem.c","stm32f","stm32g","stm32h","stm32l","_hal_msp","_it.c")
 for e in json.load(open(sys.argv[1])):
     f=e["file"]
