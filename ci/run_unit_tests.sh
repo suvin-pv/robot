@@ -5,7 +5,8 @@
 #   build/ut/junit/idr_unit_tests.xml   test results (JUnit-style XML written by GoogleTest)
 #   build/ut/coverage/index.html        coverage report (open index.html)
 #   build/ut/coverage/coverage.xml      coverage report (Cobertura XML)
-#   build/ut/coverage/summary.txt       coverage summary table
+#   build/ut/coverage/summary.txt       coverage summary table (lines)
+#   build/ut/coverage/coverage_summary.json / coverage_full.json   machine-readable coverage
 #
 # Optional environment:
 #   COVERAGE_MIN   fail if line coverage of Application/ is below this percent (default 0 = report only)
@@ -33,7 +34,10 @@ set +e
 gcovr -r . --object-directory "$OUT" \
       --filter 'IndRover_MotorECU/Application/' \
       --exclude 'IndRover_MotorECU/Application/UnitTest/' \
+      --exclude-throw-branches --exclude-unreachable-branches \
       --xml-pretty --xml "$OUT/coverage/coverage.xml" \
+      --json-summary-pretty --json-summary "$OUT/coverage/coverage_summary.json" \
+      --json "$OUT/coverage/coverage_full.json" \
       --html-details "$OUT/coverage/index.html" \
       --txt "$OUT/coverage/summary.txt" \
       --print-summary \
@@ -55,8 +59,14 @@ for tc in root.iter("testcase"):
     if fail is not None:
         print(f"- FAILED `{tc.get('classname')}.{tc.get('name')}`: {(fail.get('message') or '')[:200]}")
 PY
-  if [ -f "$OUT/coverage/summary.txt" ]; then
+  if [ -f "$OUT/coverage/coverage_summary.json" ]; then
+    python3 -I ci/coverage_summary.py "$OUT/coverage/coverage_summary.json" \
+        "$OUT/coverage/coverage_full.json" >> "$GITHUB_STEP_SUMMARY" \
+      || echo "::warning::coverage summary table could not be generated"
+  elif [ -f "$OUT/coverage/summary.txt" ]; then
     { echo; echo "### Coverage (Application/)"; echo '```'; cat "$OUT/coverage/summary.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+  else
+    echo "::warning::no coverage output was produced - see the gcovr step in the log" 
   fi
 fi
 
