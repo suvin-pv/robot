@@ -24,7 +24,7 @@ TX_THREAD tCmdMgrTcb;
 // -----------------LOCAL FILE-SCOPE VARIABLES (UNNAMED NAMESPACE--------------
 namespace
 {
-	// Pointer to stack memory allocated from byte pool
+	// Pointer to stack memory allocated from byte pools
 	VOID *s_pCmdMgrStack = nullptr;
 }
 
